@@ -241,26 +241,3 @@ def _at(hourly: Dict[str, Any], key: str, index: int) -> Optional[float]:
     if index < len(seq):
         return seq[index]
     return None
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-    添加到对话
