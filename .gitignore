@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# virtualenv
+.venv/
+venv/
+env/
+
+# Streamlit 密钥（务必不要提交）
+.streamlit/secrets.toml
+
+# 本地数据
+angling.db
+*.db
+*.sqlite3
+
+# 用户上传的照片
+uploads/
+
+# 编辑器
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
