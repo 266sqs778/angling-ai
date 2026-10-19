@@ -2,16 +2,23 @@
 
 数据来源：Open-Meteo 免费开放接口（无需 API Key）
 - 地理编码：地名 -> 经纬度
-- 预报接口：气温、气压、风速风向、云量、降水、湿度 + 日出日落
+- 预报接口：气温、气压、风速风向、云量
 
 派生计算：
 - 水温估算（Open-Meteo 不提供淡水水温，采用气温滞回近似模型，仅作参考）
 - 月相（基于朔望月周期自算，无需第三方依赖）
+
+限流兜底：Open-Meteo 免费额度按出口 IP 限流，云端托管时多个用户共用 IP，容易触发 429。
+本模块对失败请求做有限重试，仍失败则回退到本地缓存的最近一次成功数据（标记为 _stale）。
 """
 from __future__ import annotations
 
 import datetime as dt
+import json
 import math
+import os
+import tempfile
+import time
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -19,6 +26,13 @@ import requests
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search"
 TIMEOUT = 15
+
+# 限流与缓存参数
+RETRY_ATTEMPTS = 3        # 单次请求最多尝试次数
+RETRY_BACKOFF = 0.8       # 指数退避基数（秒）
+RETRY_WAIT_CAP = 5.0      # 单次等待上限，避免长时间阻塞界面
+CACHE_DIR = os.path.join(tempfile.gettempdir(), "angling_ai_cache")
+CACHE_MAX_AGE = 7 * 24 * 3600  # 缓存数据最长可用 7 天
 
 # 朔望月周期与已知新月参考时刻（用于月相推算）
 SYNODIC_MONTH = 29.530588853
@@ -36,17 +50,82 @@ MOON_NAMES = [
 ]
 
 
+def _get(url: str, params: Dict[str, Any], timeout: int, attempts: int = RETRY_ATTEMPTS):
+    """带指数退避的 GET：对限流（429）与服务端错误（5xx）重试。
+
+    其它 4xx 视为请求本身有问题，直接抛出、不做无谓重试。
+    全部尝试失败后抛出最后一次的异常，由调用方决定降级方式。
+    """
+    delay = RETRY_BACKOFF
+    last: Optional[Exception] = None
+    for _ in range(attempts):
+        try:
+            resp = requests.get(url, params=params, timeout=timeout)
+        except requests.RequestException as exc:  # 网络抖动
+            last = exc
+            time.sleep(delay)
+            delay *= 2
+            continue
+        if resp.status_code in (429, 500, 502, 503, 504):
+            last = requests.HTTPError(f"{resp.status_code} {resp.reason}", response=resp)
+            retry_after = (resp.headers.get("Retry-After") or "").strip()
+            wait = float(retry_after) if retry_after.replace(".", "").isdigit() else delay
+            time.sleep(min(wait, RETRY_WAIT_CAP))
+            delay *= 2
+            continue
+        resp.raise_for_status()
+        return resp
+    raise last or requests.RequestException("request failed")
+
+
+def _cache_file(key: str) -> str:
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    return os.path.join(CACHE_DIR, key)
+
+
+def _save_cache(key: str, payload: Dict[str, Any]) -> None:
+    """记录一次成功响应，供后续限流时降级使用。失败不影响主流程。"""
+    try:
+        with open(_cache_file(key), "w", encoding="utf-8") as fh:
+            json.dump(
+                {
+                    "fetched_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+                    "payload": payload,
+                },
+                fh,
+                ensure_ascii=False,
+            )
+    except OSError:
+        pass
+
+
+def _load_cache(key: str) -> Optional[Dict[str, Any]]:
+    """读取未过期的缓存，并补上 _stale 标记；无可用缓存时返回 None。"""
+    try:
+        with open(_cache_file(key), "r", encoding="utf-8") as fh:
+            blob = json.load(fh)
+        fetched_at = dt.datetime.fromisoformat(blob["fetched_at"])
+        age = (dt.datetime.now(dt.timezone.utc) - fetched_at).total_seconds()
+        if age > CACHE_MAX_AGE:
+            return None
+        payload = dict(blob["payload"])
+        payload["_stale"] = {"fetched_at": blob["fetched_at"], "age_minutes": int(age // 60)}
+        return payload
+    except (OSError, KeyError, ValueError, TypeError):
+        return None
+
+
 def geocode(name: str) -> Optional[Dict[str, Any]]:
     """地名 -> 经纬度。失败返回 None。"""
     if not name or not name.strip():
         return None
     try:
-        resp = requests.get(
+        resp = _get(
             GEOCODE_URL,
-            params={"name": name.strip(), "count": 1, "language": "zh", "format": "json"},
-            timeout=TIMEOUT,
+            {"name": name.strip(), "count": 1, "language": "zh", "format": "json"},
+            TIMEOUT,
+            attempts=2,
         )
-        resp.raise_for_status()
         results = (resp.json() or {}).get("results") or []
         if not results:
             return None
@@ -63,24 +142,34 @@ def geocode(name: str) -> Optional[Dict[str, Any]]:
 
 
 def fetch_forecast(lat: float, lon: float, days: int = 3) -> Dict[str, Any]:
-    """拉取逐时预报与日出日落。异常抛出 requests.RequestException。"""
+    """拉取逐时预报与当前实况。
+
+    只请求评分与界面真正用到的变量，降低单次调用权重（Open-Meteo 按变量数计权）。
+    接口限流或网络异常时，回退到最近一次成功的本地缓存，并在返回体中标记 `_stale`。
+    """
     params = {
         "latitude": lat,
         "longitude": lon,
         "timezone": "auto",
         "forecast_days": days,
         "hourly": (
-            "temperature_2m,surface_pressure,wind_speed_10m,wind_direction_10m,"
-            "cloud_cover,precipitation,relative_humidity_2m"
+            "temperature_2m,surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover"
         ),
-        "daily": "sunrise,sunset,temperature_2m_max,temperature_2m_min",
         "current": (
             "temperature_2m,surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover"
         ),
     }
-    resp = requests.get(FORECAST_URL, params=params, timeout=20)
-    resp.raise_for_status()
-    return resp.json()
+    key = f"forecast_{round(lat, 3)}_{round(lon, 3)}_{days}.json"
+    try:
+        payload = _get(FORECAST_URL, params, timeout=20).json()
+    except requests.RequestException as exc:
+        cached = _load_cache(key)
+        if cached is None:
+            raise
+        cached["_stale"]["reason"] = str(exc)
+        return cached
+    _save_cache(key, payload)
+    return payload
 
 
 def estimate_water_temp(hourly: Dict[str, Any], lag_days: float = 2.0) -> Optional[float]:
@@ -142,8 +231,6 @@ def build_hourly_frame(forecast: Dict[str, Any]) -> List[Dict[str, Any]]:
                 "wind": _at(hourly, "wind_speed_10m", i),
                 "wind_dir": _at(hourly, "wind_direction_10m", i),
                 "cloud": _at(hourly, "cloud_cover", i),
-                "precip": _at(hourly, "precipitation", i),
-                "humidity": _at(hourly, "relative_humidity_2m", i),
             }
         )
     return rows
@@ -154,3 +241,26 @@ def _at(hourly: Dict[str, Any], key: str, index: int) -> Optional[float]:
     if index < len(seq):
         return seq[index]
     return None
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    添加到对话
