@@ -25,6 +25,9 @@ import requests
 
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search"
+# 备用源：MET Norway（挪威气象研究所，免费、无需 Key）。Open-Meteo 对云端共享出口 IP 常返回 429。
+METNO_URL = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
+METNO_UA = "angling-ai-portfolio/1.0 (+https://github.com/266sqs778/angling-ai)"
 TIMEOUT = 15
 
 # 限流与缓存参数
@@ -50,7 +53,13 @@ MOON_NAMES = [
 ]
 
 
-def _get(url: str, params: Dict[str, Any], timeout: int, attempts: int = RETRY_ATTEMPTS):
+def _get(
+    url: str,
+    params: Dict[str, Any],
+    timeout: int,
+    attempts: int = RETRY_ATTEMPTS,
+    headers: Optional[Dict[str, str]] = None,
+):
     """带指数退避的 GET：对限流（429）与服务端错误（5xx）重试。
 
     其它 4xx 视为请求本身有问题，直接抛出、不做无谓重试。
@@ -60,7 +69,7 @@ def _get(url: str, params: Dict[str, Any], timeout: int, attempts: int = RETRY_A
     last: Optional[Exception] = None
     for _ in range(attempts):
         try:
-            resp = requests.get(url, params=params, timeout=timeout)
+            resp = requests.get(url, params=params, timeout=timeout, headers=headers)
         except requests.RequestException as exc:  # 网络抖动
             last = exc
             time.sleep(delay)
@@ -115,6 +124,54 @@ def _load_cache(key: str) -> Optional[Dict[str, Any]]:
         return None
 
 
+def _local_offset_hours(lon: float) -> int:
+    """由经度粗估时区偏移（备用源只给 UTC 时间，需转成本地时间用于展示）。"""
+    return max(-12, min(14, int(round(lon / 15.0))))
+
+
+def _fetch_metno(lat: float, lon: float, days: int = 3) -> Dict[str, Any]:
+    """备用数据源：MET Norway 小时级预报。返回结构与 Open-Meteo 对齐。
+
+    注意：其气压取的是海平面气压（air_pressure_at_sea_level），与 Open-Meteo 的
+    站点气压口径不同，海拔较高的钓点会略微偏高。
+    """
+    resp = _get(METNO_URL, {"lat": lat, "lon": lon}, timeout=20, headers={"User-Agent": METNO_UA})
+    series = ((resp.json() or {}).get("properties") or {}).get("timeseries") or []
+    series = series[: max(24, days * 24)]
+    if not series:
+        raise requests.RequestException("met.no 未返回有效数据")
+
+    tz = dt.timezone(dt.timedelta(hours=_local_offset_hours(lon)))
+    hourly: Dict[str, List[Any]] = {
+        "time": [],
+        "temperature_2m": [],
+        "surface_pressure": [],
+        "wind_speed_10m": [],
+        "wind_direction_10m": [],
+        "cloud_cover": [],
+    }
+    for entry in series:
+        details = (((entry.get("data") or {}).get("instant") or {}).get("details")) or {}
+        moment = dt.datetime.fromisoformat(entry["time"].replace("Z", "+00:00")).astimezone(tz)
+        hourly["time"].append(moment.strftime("%Y-%m-%dT%H:%M"))
+        hourly["temperature_2m"].append(details.get("air_temperature"))
+        hourly["surface_pressure"].append(details.get("air_pressure_at_sea_level"))
+        hourly["wind_speed_10m"].append(details.get("wind_speed"))
+        hourly["wind_direction_10m"].append(details.get("wind_from_direction"))
+        hourly["cloud_cover"].append(details.get("cloud_area_fraction"))
+
+    return {
+        "hourly": hourly,
+        "current": {
+            "temperature_2m": hourly["temperature_2m"][0],
+            "surface_pressure": hourly["surface_pressure"][0],
+            "wind_speed_10m": hourly["wind_speed_10m"][0],
+            "wind_direction_10m": hourly["wind_direction_10m"][0],
+            "cloud_cover": hourly["cloud_cover"][0],
+        },
+    }
+
+
 def geocode(name: str) -> Optional[Dict[str, Any]]:
     """地名 -> 经纬度。失败返回 None。"""
     if not name or not name.strip():
@@ -144,14 +201,16 @@ def geocode(name: str) -> Optional[Dict[str, Any]]:
 def fetch_forecast(lat: float, lon: float, days: int = 3) -> Dict[str, Any]:
     """拉取逐时预报与当前实况。
 
-    只请求评分与界面真正用到的变量，降低单次调用权重（Open-Meteo 按变量数计权）。
-    接口限流或网络异常时，回退到最近一次成功的本地缓存，并在返回体中标记 `_stale`。
+    依次尝试 Open-Meteo → 备用源 met.no → 本地缓存，任一环节成功即返回。
+    只请求评分与界面真正用到的变量，并统一风速为 m/s，降低单次调用权重。
+    返回体中 `_source` 标记数据来源；`_stale`（仅缓存降级时出现）标记数据获取时间。
     """
     params = {
         "latitude": lat,
         "longitude": lon,
         "timezone": "auto",
         "forecast_days": days,
+        "wind_speed_unit": "ms",
         "hourly": (
             "temperature_2m,surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover"
         ),
@@ -162,12 +221,20 @@ def fetch_forecast(lat: float, lon: float, days: int = 3) -> Dict[str, Any]:
     key = f"forecast_{round(lat, 3)}_{round(lon, 3)}_{days}.json"
     try:
         payload = _get(FORECAST_URL, params, timeout=20).json()
-    except requests.RequestException as exc:
-        cached = _load_cache(key)
-        if cached is None:
-            raise
-        cached["_stale"]["reason"] = str(exc)
-        return cached
+        source = "open-meteo"
+    except requests.RequestException as primary_err:
+        try:
+            payload = _fetch_metno(lat, lon, days)
+            source = "met.no"
+        except requests.RequestException as backup_err:
+            cached = _load_cache(key)
+            if cached is None:
+                raise requests.RequestException(
+                    f"所有数据源均不可用（Open-Meteo: {primary_err}；met.no: {backup_err}）"
+                ) from backup_err
+            cached["_stale"]["reason"] = f"Open-Meteo: {primary_err}；met.no: {backup_err}"
+            return cached
+    payload["_source"] = source
     _save_cache(key, payload)
     return payload
 
