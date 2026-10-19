@@ -152,9 +152,11 @@ def compute_context(loc: Dict[str, Any], species: str) -> Optional[Dict[str, Any
     stale = forecast.get("_stale")
     if stale:
         st.warning(
-            f"⚠️ Open-Meteo 接口暂时限流，当前展示的是最近一次成功获取的缓存数据"
+            f"⚠️ 气象接口暂时不可用，当前展示的是最近一次成功获取的缓存数据"
             f"（约 {stale['age_minutes']} 分钟前），非实时数据，评分仅供参考。"
         )
+    elif forecast.get("_source") == "met.no":
+        st.caption("环境数据源：met.no（Open-Meteo 限流中，已自动切换备用源；气压为海平面气压）")
 
     rows = conditions.build_hourly_frame(forecast)
     if not rows:
