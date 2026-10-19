@@ -152,8 +152,8 @@ export DEEPSEEK_API_KEY=你的Key        # Windows PowerShell: $env:DEEPSEEK_API
 
 ## 👤 关于作者
 
-望天云，南方科技大学智能制造与机器人方向硕士，关注 AI 与实体场景的结合。
+AXA，南方科技大学智能制造与机器人方向硕士，关注 AI 与实体场景的结合。
 
 - 南科大钓鱼协会 高级顾问（Senior Advisor）
 - 深客松 2025（DeepHackathon）银奖 —— 本项目即由当时的黑客松原型演进而来
-- 2026 探鱼器挑战杯 铜奖
+- 2026 广东省挑战杯 铜奖
