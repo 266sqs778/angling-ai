@@ -16,12 +16,13 @@ import pandas as pd
 import streamlit as st
 from streamlit_folium import st_folium
 
-from modules import agent, conditions, knowledge, records, scoring
+from modules import agent, conditions, knowledge, records, scoring, ui_theme
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 DEFAULT_LOC = {"name": "深圳", "lat": 22.5431, "lon": 114.0579, "admin": "广东"}
 
 st.set_page_config(page_title="千鱼千寻 · AI 钓鱼参谋", page_icon="🎣", layout="wide")
+ui_theme.inject()
 
 
 # ---------------------------------------------------------------- 数据加载与缓存
