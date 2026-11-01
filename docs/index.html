@@ -168,6 +168,31 @@
   .warn b { color: var(--warn); }
   .note { margin: 10px 0 0; font-size: 12.5px; color: var(--muted); }
 
+  /* 复盘表 */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; margin-top: 2px; }
+  table.diag { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 660px; }
+  table.diag th {
+    text-align: left;
+    padding: 9px 12px;
+    background: var(--brand-soft);
+    color: var(--brand);
+    font-size: 11px;
+    letter-spacing: .12em;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  table.diag td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #eef2ef;
+    color: var(--ink-2);
+    vertical-align: top;
+    line-height: 1.6;
+  }
+  table.diag tr:last-child td { border-bottom: 0; }
+  table.diag td:first-child { font-weight: 600; color: var(--ink); white-space: nowrap; }
+  .loop { margin-top: 16px; }
+  .loop-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.1fr); gap: 20px; align-items: start; }
+
   /* 步骤导航 */
   .steps-nav {
     display: flex; flex-wrap: wrap; gap: 8px;
@@ -200,6 +225,7 @@
 
   @media (max-width: 780px) {
     .body { grid-template-columns: 1fr; }
+    .loop-grid { grid-template-columns: 1fr; }
     figure { order: -1; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -222,13 +248,14 @@
 <header class="top">
   <div class="wrap">
     <p class="crumbs"><a href="https://266sqs778.github.io/angling-ai/">千鱼千寻 · 钓鱼导航</a> / 示例路线</p>
-    <h1>第一次出钓，按这五步走</h1>
-    <p class="lead">老手要的是「今天鱼口如何」，新手要的是「我该从哪一步开始」。这条示例路线以城市周边水库钓鲫为场景，把一次出钓拆成五步——每一步只回答一个问题，勾选即保存进度。</p>
+    <h1>第一次出钓，按这六步走</h1>
+    <p class="lead">老手要的是「今天鱼口如何」，新手要的是「我该从哪一步开始」。这条示例路线以城市周边水库钓鲫为场景，把一次出钓拆成六步——前五步在水边，最后一步在回家之后：把“今天为什么没口”变成下一次能改的一件事。</p>
     <div class="chips">
       <span>场景：城市周边水库</span>
       <span>目标鱼：鲫鱼</span>
       <span>时长：约 4 小时</span>
       <span>难度：入门</span>
+      <span>闭环：记录 → 复盘 → 调整</span>
     </div>
     <div class="actions">
       <a class="btn" href="https://angling-ai-266sqs778.streamlit.app" target="_blank" rel="noopener">打开在线参谋 ↗</a>
@@ -254,6 +281,7 @@
     <a href="#step-3">03 组线组</a>
     <a href="#step-4">04 调漂</a>
     <a href="#step-5">05 开钓与收竿</a>
+    <a href="#step-6">06 空军复盘</a>
   </nav>
 
   <!-- 01 -->
@@ -520,6 +548,81 @@
       </figure>
     </div>
     <p class="warn"><b>新手常犯</b>：雷声近了还在收最后一竿；徒手抓鱼被扎；把饵料袋和断线留在岸边。</p>
+  </article>
+
+  <!-- 06 -->
+  <article class="card" id="step-6">
+    <header>
+      <div class="idx">06</div>
+      <div>
+        <h2>空军复盘：没口时，按顺序查四件事</h2>
+        <p class="goal">目标：把“今天运气不好”变成下一次能改的一条。</p>
+      </div>
+    </header>
+    <div class="table-wrap">
+      <table class="diag">
+        <thead>
+          <tr><th>现象</th><th>先查什么</th><th>常见原因</th><th>下一次怎么改</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>全天没口</td><td>天气与时段</td><td>气压骤降、水温突变，或错过了早晚窗口</td><td>换时段再钓一次；钓深半米，或改钓离底</td></tr>
+          <tr><td>有鱼星不咬钩</td><td>选位与饵料</td><td>窝里有鱼，但饵不对路、饵团太大</td><td>换小饵、换味型，先停打窝</td></tr>
+          <tr><td>有口不中鱼</td><td>调漂与钩号</td><td>钓得太灵、钩大挡口、子线偏粗</td><td>上推半目钓钝，换小一号钩与细子线</td></tr>
+          <tr><td>频繁挂底断线</td><td>选位与水底</td><td>水底障碍多，子线又比主线粗</td><td>换钓点、改单钩，出门多备两套线组</td></tr>
+          <tr><td>旁边上鱼你没口</td><td>深度与距离</td><td>钓深、钓远与对方不同，鱼不在你的窝里</td><td>先看对方钓多深，再决定调漂还是挪位置</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="loop-grid loop">
+      <div>
+        <h3 class="sub">复盘四问（收竿前问完）</h3>
+        <ul class="plain">
+          <li><label class="item"><input type="checkbox" data-key="s6-1"><span>今天的气压、水温、风力，和有口的那天差在哪？</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s6-2"><span>我钓的深度和距离，和旁边上鱼的人一样吗？</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s6-3"><span>我是“完全没有口”，还是“有口不中”？</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s6-4"><span>下次只改一件事，改什么？</span></label></li>
+        </ul>
+        <p class="note">只改一件事。一次改三样，下次还是不知道哪一步起了作用。</p>
+      </div>
+      <figure>
+        <svg viewBox="0 0 520 196" role="img" aria-label="复盘闭环：出钓、记录、复盘、调整，再回到下一次出钓">
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M0 0 L10 5 L0 10 Z" fill="#8a9a91"/>
+            </marker>
+          </defs>
+          <rect width="520" height="196" fill="#fbfcfb"/>
+
+          <rect x="10" y="26" width="104" height="44" rx="9" fill="#e6f2f7" stroke="#cfe1e9"/>
+          <text x="62" y="52" font-size="12" fill="#0b6377" text-anchor="middle">出钓</text>
+
+          <rect x="142" y="26" width="104" height="44" rx="9" fill="#e6f2f7" stroke="#cfe1e9"/>
+          <text x="194" y="52" font-size="12" fill="#0b6377" text-anchor="middle">记录</text>
+
+          <rect x="274" y="26" width="104" height="44" rx="9" fill="#e6f2f7" stroke="#cfe1e9"/>
+          <text x="326" y="52" font-size="12" fill="#0b6377" text-anchor="middle">复盘</text>
+
+          <rect x="406" y="26" width="104" height="44" rx="9" fill="#eaf4ee" stroke="#cfe2d7"/>
+          <text x="458" y="52" font-size="12" fill="#0f6b47" text-anchor="middle">调整</text>
+
+          <line x1="114" y1="48" x2="136" y2="48" stroke="#8a9a91" stroke-width="1.4" marker-end="url(#arr)"/>
+          <line x1="246" y1="48" x2="268" y2="48" stroke="#8a9a91" stroke-width="1.4" marker-end="url(#arr)"/>
+          <line x1="378" y1="48" x2="400" y2="48" stroke="#8a9a91" stroke-width="1.4" marker-end="url(#arr)"/>
+
+          <text x="62" y="90" font-size="10" fill="#8a9a91" text-anchor="middle">天气 · 选位</text>
+          <text x="194" y="90" font-size="10" fill="#8a9a91" text-anchor="middle">鱼种 · 水深</text>
+          <text x="326" y="90" font-size="10" fill="#8a9a91" text-anchor="middle">四类排查</text>
+          <text x="458" y="90" font-size="10" fill="#8a9a91" text-anchor="middle">只改一件</text>
+
+          <path d="M458 96 L458 132 L62 132 L62 104" fill="none" stroke="#8a9a91" stroke-width="1.4" marker-end="url(#arr)"/>
+          <text x="260" y="150" font-size="10.5" fill="#5d6f66" text-anchor="middle">下一次出钓，带着这一条改动回到水边</text>
+          <text x="260" y="176" font-size="10" fill="#a4b2aa" text-anchor="middle">出钓 → 记录 → 复盘 → 调整 → 再出钓</text>
+        </svg>
+        <figcaption>复盘不是写总结，是把一次出钓接成下一次的输入</figcaption>
+      </figure>
+    </div>
+    <p class="warn"><b>新手常犯</b>：一没口就狂换饵、狂打窝，把所有变量搅在一起；回家只记得“空军”，却没记当时的水深与时段。</p>
   </article>
 
   <div class="disclaimer">
