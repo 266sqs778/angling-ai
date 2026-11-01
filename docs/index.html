@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>钓鱼导航 · 第一次出钓</title>
+<meta name="description" content="千鱼千寻 · 钓鱼导航示例：第一次出钓的五步清单，装备、选位、线组、调漂与收竿。">
+<style>
+  :root {
+    --paper: #f7f9f7;
+    --card: #ffffff;
+    --ink: #12211c;
+    --ink-2: #3f5149;
+    --muted: #77877f;
+    --line: #e0e7e2;
+    --brand: #0f6b47;
+    --brand-soft: #eaf4ee;
+    --water: #0b6b8a;
+    --water-soft: #e6f2f7;
+    --warn: #a85a12;
+    --warn-soft: #fdf3e7;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.7;
+  }
+  a { color: var(--brand); }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 0 20px; }
+
+  /* 顶部 */
+  header.top {
+    background: linear-gradient(165deg, #0d3a2c 0%, #0f4a3a 55%, #0b5c63 100%);
+    color: #eef7f2;
+    padding: 30px 0 34px;
+  }
+  .crumbs { font-size: 12px; letter-spacing: .16em; color: #9fc4b4; text-transform: uppercase; }
+  .crumbs a { color: #c9e3d6; text-decoration: none; }
+  header.top h1 {
+    margin: 12px 0 8px;
+    font-size: clamp(28px, 4.4vw, 42px);
+    line-height: 1.2;
+    letter-spacing: -.01em;
+  }
+  header.top p.lead { margin: 0; max-width: 720px; color: #cfe4d9; font-size: 15px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .chips span {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.16);
+    color: #dcf0e5;
+  }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 15px;
+    border-radius: 9px;
+    font-size: 13.5px;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    background: #eaf4ee;
+    color: #0d3a2c;
+    font-family: inherit;
+  }
+  .btn--ghost { background: transparent; color: #e6f3ec; border-color: rgba(255,255,255,.28); }
+  .btn:hover { filter: brightness(.97); }
+
+  /* 进度条 */
+  .progress {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(247,249,247,.94);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .progress .inner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .bar { flex: 1; height: 6px; border-radius: 999px; background: #e2e9e4; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--brand), var(--water)); transition: width .25s ease; }
+  .progress b { color: var(--brand); font-variant-numeric: tabular-nums; }
+  .progress button {
+    font: inherit; font-size: 12px; color: var(--muted);
+    background: none; border: 0; cursor: pointer; text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* 卡片 */
+  main { padding: 26px 0 10px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px 22px 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 2px rgba(18,33,28,.03);
+  }
+  .card > header { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+  .idx {
+    flex: none;
+    width: 42px; height: 42px;
+    display: grid; place-items: center;
+    border-radius: 10px;
+    background: var(--brand-soft);
+    color: var(--brand);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 17px;
+  }
+  .card h2 { margin: 0; font-size: 20px; line-height: 1.35; letter-spacing: -.01em; }
+  .goal { margin: 3px 0 0; font-size: 13px; color: var(--muted); }
+  .body { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,.85fr); gap: 22px; align-items: start; }
+  .body--wide { grid-template-columns: 1fr; }
+  h3.sub {
+    margin: 0 0 8px;
+    font-size: 11px;
+    letter-spacing: .18em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  ul.plain { list-style: none; margin: 0; padding: 0; }
+  label.item {
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
+    padding: 6px 0;
+    font-size: 14px;
+    color: var(--ink-2);
+    border-bottom: 1px dashed #edf1ee;
+    cursor: pointer;
+  }
+  label.item:last-of-type { border-bottom: 0; }
+  label.item input {
+    flex: none;
+    width: 17px; height: 17px;
+    margin: 4px 0 0;
+    accent-color: var(--brand);
+  }
+  label.item input:checked + span { color: var(--muted); text-decoration: line-through; text-decoration-color: #b9c7bf; }
+  label.item b { color: var(--ink); font-weight: 600; }
+  figure { margin: 0; }
+  figure svg { width: 100%; height: auto; display: block; border-radius: 10px; background: #fbfcfb; border: 1px solid var(--line); }
+  figcaption { margin-top: 7px; font-size: 11.5px; color: var(--muted); text-align: center; }
+  .warn {
+    margin: 14px 0 0;
+    padding: 9px 12px;
+    background: var(--warn-soft);
+    border-left: 3px solid var(--warn);
+    border-radius: 0 8px 8px 0;
+    font-size: 13px;
+    color: #6d4418;
+  }
+  .warn b { color: var(--warn); }
+  .note { margin: 10px 0 0; font-size: 12.5px; color: var(--muted); }
+
+  /* 步骤导航 */
+  .steps-nav {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin: 4px 0 18px;
+    font-size: 12.5px;
+  }
+  .steps-nav a {
+    text-decoration: none;
+    color: var(--ink-2);
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 999px;
+    padding: 5px 12px;
+  }
+  .steps-nav a:hover { border-color: var(--brand); color: var(--brand); }
+
+  /* 结尾 */
+  .disclaimer {
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px 18px;
+    font-size: 13px;
+    color: var(--ink-2);
+    margin: 20px 0 8px;
+  }
+  .disclaimer b { color: var(--ink); }
+  footer.bottom { padding: 18px 0 40px; color: var(--muted); font-size: 12px; }
+  footer.bottom a { color: var(--muted); }
+
+  @media (max-width: 780px) {
+    .body { grid-template-columns: 1fr; }
+    figure { order: -1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .bar i { transition: none; }
+  }
+  @media print {
+    body { background: #fff; }
+    header.top { background: #fff; color: #111; padding: 0 0 12px; }
+    .crumbs, header.top p.lead, .chips, .actions, .progress, .steps-nav { display: none; }
+    header.top h1 { font-size: 24px; margin: 0; }
+    .card { break-inside: avoid; box-shadow: none; border-color: #ccc; margin-bottom: 10px; }
+    .warn { break-inside: avoid; }
+    footer.bottom { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="crumbs"><a href="https://266sqs778.github.io/angling-ai/">千鱼千寻 · 钓鱼导航</a> / 示例路线</p>
+    <h1>第一次出钓，按这五步走</h1>
+    <p class="lead">老手要的是「今天鱼口如何」，新手要的是「我该从哪一步开始」。这条示例路线以城市周边水库钓鲫为场景，把一次出钓拆成五步——每一步只回答一个问题，勾选即保存进度。</p>
+    <div class="chips">
+      <span>场景：城市周边水库</span>
+      <span>目标鱼：鲫鱼</span>
+      <span>时长：约 4 小时</span>
+      <span>难度：入门</span>
+    </div>
+    <div class="actions">
+      <a class="btn" href="https://angling-ai-266sqs778.streamlit.app" target="_blank" rel="noopener">打开在线参谋 ↗</a>
+      <a class="btn btn--ghost" href="https://github.com/266sqs778/angling-ai/blob/main/assets/05-poster.pdf" target="_blank" rel="noopener">查看产品海报 ↗</a>
+      <button class="btn btn--ghost" type="button" onclick="window.print()">打印清单</button>
+    </div>
+  </div>
+</header>
+
+<div class="progress">
+  <div class="wrap inner">
+    <span>准备进度</span>
+    <div class="bar" role="progressbar" aria-label="准备进度" aria-valuemin="0" aria-valuemax="100" id="progress"><i id="progress-fill"></i></div>
+    <span><b id="progress-text">0 / 0</b></span>
+    <button type="button" id="reset">重置</button>
+  </div>
+</div>
+
+<main class="wrap">
+  <nav class="steps-nav" aria-label="步骤导航">
+    <a href="#step-1">01 出发前</a>
+    <a href="#step-2">02 选位置</a>
+    <a href="#step-3">03 组线组</a>
+    <a href="#step-4">04 调漂</a>
+    <a href="#step-5">05 开钓与收竿</a>
+  </nav>
+
+  <!-- 01 -->
+  <article class="card" id="step-1">
+    <header>
+      <div class="idx">01</div>
+      <div>
+        <h2>出发前 30 分钟：把东西带对</h2>
+        <p class="goal">目标：到水边就能开钓，不为一件小东西来回跑。</p>
+      </div>
+    </header>
+    <div class="body">
+      <div>
+        <h3 class="sub">装备清单</h3>
+        <ul class="plain">
+          <li><label class="item"><input type="checkbox" data-key="s1-rod"><span><b>4.5 m 鲫鱼竿</b>（37 调偏软，护线也护新手手腕）</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s1-rig"><span><b>成品线组 ×2 套</b>：1.0 主线 + 0.6 子线 + 3 号袖钩</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s1-float"><span><b>浮漂</b>：吃铅 1.5–2.0 g 的枣核漂，另带 1 支备用</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s1-bait"><span><b>饵料</b>：一包腥香拉饵 + 一小罐玉米（小鱼闹窝时换）</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s1-tool"><span><b>工具</b>：摘钩器、毛巾、剪刀、铅皮、鱼护或放流桶</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s1-safe"><span><b>安全</b>：防晒、驱蚊、1.5 L 水、垃圾袋、创可贴</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s1-check"><span><b>先查两件事</b>：当地禁渔期 / 禁钓区；当天风力是否超过 5 级</span></label></li>
+        </ul>
+        <p class="note">线组按“两套”准备，是因为挂底、缠线在新手阶段几乎必然发生。</p>
+      </div>
+      <figure>
+        <svg viewBox="0 0 320 210" role="img" aria-label="装备示意：竿、线组、漂、饵与工具">
+          <rect x="0" y="0" width="320" height="210" fill="#fbfcfb"/>
+          <path d="M40 168 L250 44" stroke="#8a6a45" stroke-width="7" stroke-linecap="round"/>
+          <path d="M250 44 L282 28" stroke="#b99b74" stroke-width="3" stroke-linecap="round"/>
+          <text x="42" y="190" font-size="11" fill="#5d6f66">4.5 m 竿</text>
+
+          <line x1="282" y1="28" x2="282" y2="120" stroke="#8aa79a" stroke-width="1.5"/>
+          <ellipse cx="282" cy="78" rx="5" ry="12" fill="#e0653f"/>
+          <line x1="282" y1="78" x2="282" y2="90" stroke="#6f8378" stroke-width="1.5"/>
+          <rect x="278" y="90" width="8" height="14" rx="2" fill="#596b62"/>
+          <path d="M282 104 q10 12 0 26" stroke="#8aa79a" stroke-width="1.5" fill="none"/>
+          <path d="M282 130 q-7 5 0 9 q7 -4 0 -9" fill="#596b62"/>
+          <text x="296" y="86" font-size="10" fill="#5d6f66">漂</text>
+          <text x="296" y="102" font-size="10" fill="#5d6f66">铅</text>
+          <text x="296" y="134" font-size="10" fill="#5d6f66">钩</text>
+
+          <rect x="26" y="34" width="72" height="52" rx="8" fill="#eaf4ee" stroke="#cfe2d7"/>
+          <text x="62" y="55" font-size="11" fill="#0f6b47" text-anchor="middle">饵料</text>
+          <text x="62" y="72" font-size="10" fill="#6b7d75" text-anchor="middle">腥香 / 玉米</text>
+
+          <rect x="26" y="98" width="72" height="46" rx="8" fill="#e6f2f7" stroke="#cfe1e9"/>
+          <text x="62" y="118" font-size="11" fill="#0b6b8a" text-anchor="middle">工具</text>
+          <text x="62" y="134" font-size="10" fill="#6b7d75" text-anchor="middle">摘钩器 · 毛巾</text>
+        </svg>
+        <figcaption>一套入门装备：竿、线组、漂、饵、工具与安全用品</figcaption>
+      </figure>
+    </div>
+    <p class="warn"><b>新手常犯</b>：只带一套线组，一挂底就只能收工；或者不查禁渔期，到了水边才发现不能下竿。</p>
+  </article>
+
+  <!-- 02 -->
+  <article class="card" id="step-2">
+    <header>
+      <div class="idx">02</div>
+      <div>
+        <h2>到水边：先选位置，再开箱</h2>
+        <p class="goal">目标：找到一个有鱼、安全、且不打扰别人的位置。</p>
+      </div>
+    </header>
+    <div class="body">
+      <div>
+        <h3 class="sub">选位三看</h3>
+        <ul class="plain">
+          <li><label class="item"><input type="checkbox" data-key="s2-1"><span><b>看地形</b>：优先铧尖（岸边凸出）、回湾（水流缓）、水草边与进出水口</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s2-2"><span><b>看结构</b>：找深浅交界、障碍物旁，鱼喜欢待在有变化的地方</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s2-3"><span><b>看距离</b>：与旁边钓友保持 10 m 以上，先问一句“这边可以坐吗”</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s2-4"><span><b>看安全</b>：头顶无电线，身后有退路，脚下不是松软陡坡</span></label></li>
+        </ul>
+        <p class="note">选位比调漂更影响渔获。位置不对，后面每一步都在补锅。</p>
+      </div>
+      <figure>
+        <svg viewBox="0 0 320 210" role="img" aria-label="水库选位示意：铧尖、回湾、水草边与进出水口">
+          <rect width="320" height="210" fill="#f2f7f3"/>
+          <path d="M0 0 H320 V96 C268 104 236 88 206 96 C176 104 168 132 138 138 C104 145 96 176 60 180 C36 183 18 172 0 176 Z" fill="#cfe6ef"/>
+          <text x="250" y="40" font-size="12" fill="#7fa6b4">水面</text>
+          <path d="M0 176 C18 172 36 183 60 180 C96 176 104 145 138 138 C168 132 176 104 206 96 C236 88 268 104 320 96" fill="none" stroke="#8fb9c6" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+          <circle cx="150" cy="60" r="5" fill="#0f6b47"/>
+          <text x="160" y="64" font-size="11" fill="#0f6b47">铧尖</text>
+
+          <circle cx="248" cy="140" r="5" fill="#0b6b8a"/>
+          <text x="258" y="144" font-size="11" fill="#0b6b8a">回湾</text>
+
+          <circle cx="76" cy="150" r="5" fill="#7a8f3a"/>
+          <text x="86" y="154" font-size="11" fill="#5f7130">水草边</text>
+
+          <circle cx="292" cy="66" r="5" fill="#a85a12"/>
+          <text x="316" y="56" font-size="11" fill="#a85a12" text-anchor="end">进出水口</text>
+
+          <path d="M150 60 L196 60" stroke="#c9d8cf" stroke-width="1"/>
+        </svg>
+        <figcaption>四个优先点位：铧尖、回湾、水草边、进出水口</figcaption>
+      </figure>
+    </div>
+    <p class="warn"><b>新手常犯</b>：哪个位置拍照好看就坐哪，忽略风向、头顶电线与身后退路。</p>
+  </article>
+
+  <!-- 03 -->
+  <article class="card" id="step-3">
+    <header>
+      <div class="idx">03</div>
+      <div>
+        <h2>组线组：一套鲫鱼线组怎么配</h2>
+        <p class="goal">目标：主线不超号、子线能舍车保帅，挂底只断子线。</p>
+      </div>
+    </header>
+    <div class="body">
+      <div>
+        <h3 class="sub">装配顺序</h3>
+        <ul class="plain">
+          <li><label class="item"><input type="checkbox" data-key="s3-1"><span><b>主线 1.0</b>：从竿稍结开始，依次穿过漂座、铅皮座、八字环</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s3-2"><span><b>子线 0.6，对折后 20–25 cm</b>：两端绑 3 号袖钩，上端系在八字环</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s3-3"><span><b>铅皮先多后少</b>：一次剪一点，剪完下水试一次</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s3-4"><span><b>检查结节</b>：拉一拉每个结，确认不滑扣再抛竿</span></label></li>
+        </ul>
+        <p class="note">原则只有一条：子线号数小于主线。挂底时断的是子线，不是竿。</p>
+      </div>
+      <figure>
+        <svg viewBox="0 0 300 260" role="img" aria-label="线组结构：主线、漂座、铅皮座、八字环、子线与鱼钩">
+          <rect width="300" height="260" fill="#fbfcfb"/>
+          <line x1="60" y1="20" x2="60" y2="42" stroke="#596b62" stroke-width="2"/>
+          <text x="70" y="26" font-size="10" fill="#5d6f66">竿稍结</text>
+
+          <line x1="60" y1="42" x2="60" y2="96" stroke="#8aa79a" stroke-width="1.6"/>
+          <text x="70" y="70" font-size="10" fill="#5d6f66">主线 1.0</text>
+
+          <rect x="54" y="96" width="12" height="16" rx="3" fill="#0b6b8a"/>
+          <ellipse cx="60" cy="84" rx="5" ry="13" fill="#e0653f"/>
+          <text x="86" y="90" font-size="10" fill="#5d6f66">浮漂</text>
+
+          <rect x="52" y="128" width="16" height="22" rx="2" fill="#596b62"/>
+          <text x="78" y="144" font-size="10" fill="#5d6f66">铅皮座</text>
+
+          <circle cx="60" cy="164" r="5" fill="none" stroke="#596b62" stroke-width="1.6"/>
+          <text x="78" y="168" font-size="10" fill="#5d6f66">八字环</text>
+
+          <path d="M60 169 L54 206" stroke="#8aa79a" stroke-width="1.3"/>
+          <path d="M60 169 L66 206" stroke="#8aa79a" stroke-width="1.3"/>
+          <text x="76" y="196" font-size="10" fill="#5d6f66">子线 0.6</text>
+
+          <path d="M54 206 q-8 8 0 14 q8 -6 0 -14" fill="none" stroke="#3f5149" stroke-width="1.6"/>
+          <path d="M66 206 q-8 8 0 14 q8 -6 0 -14" fill="none" stroke="#3f5149" stroke-width="1.6"/>
+          <text x="84" y="222" font-size="10" fill="#5d6f66">3 号袖钩</text>
+        </svg>
+        <figcaption>从竿稍到鱼钩：一套完整鲫鱼线组</figcaption>
+      </figure>
+    </div>
+    <p class="warn"><b>新手常犯</b>：子线比主线粗，挂底时直接把竿稍拉断；或者铅皮一次剪太多，只能重绑。</p>
+  </article>
+
+  <!-- 04 -->
+  <article class="card" id="step-4">
+    <header>
+      <div class="idx">04</div>
+      <div>
+        <h2>调漂：重铅找底，调四钓二</h2>
+        <p class="goal">目标：知道钩饵到底在哪，能分清“没口”和“没到底”。</p>
+      </div>
+    </header>
+    <div class="body body--wide">
+      <div>
+        <h3 class="sub">四步调漂</h3>
+        <ul class="plain">
+          <li><label class="item"><input type="checkbox" data-key="s4-1"><span><b>第一步 · 重铅找底</b>：不挂饵，铅皮加重到能把漂全部拉沉，上推浮漂直到露出 1 目，记住这个位置就是水深</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s4-2"><span><b>第二步 · 半水调目</b>：下拉浮漂「一个子线长度 + 10 cm」，剪铅皮到漂尾露出 4 目</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s4-3"><span><b>第三步 · 挂饵找底</b>：搓饵或拉饵上钩，上推浮漂直到露出 2 目，此时下钩触底</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s4-4"><span><b>第四步 · 微调</b>：有口不中鱼就上推半目钓钝一点；空竿多、信号乱就下推钓灵一点</span></label></li>
+        </ul>
+      </div>
+      <figure>
+        <svg viewBox="0 0 640 190" role="img" aria-label="调漂四步：重铅找底、半水调四目、挂饵钓二目、微调">
+          <g font-size="10" fill="#5d6f66">
+            <!-- 1 -->
+            <rect x="10" y="20" width="140" height="130" rx="8" fill="#f4f9fb" stroke="#e0e7e2"/>
+            <line x1="10" y1="70" x2="150" y2="70" stroke="#a9cdd8" stroke-width="1.4"/>
+            <line x1="80" y1="30" x2="80" y2="112" stroke="#8aa79a" stroke-width="1.3"/>
+            <ellipse cx="80" cy="86" rx="4" ry="9" fill="#9fb3a9"/>
+            <rect x="75" y="104" width="10" height="12" rx="2" fill="#596b62"/>
+            <text x="80" y="142" text-anchor="middle">① 重铅找底</text>
+            <text x="80" y="158" text-anchor="middle" fill="#8a9a91">漂全沉 · 露 1 目记水深</text>
+            <!-- 2 -->
+            <rect x="170" y="20" width="140" height="130" rx="8" fill="#f4f9fb" stroke="#e0e7e2"/>
+            <line x1="170" y1="70" x2="310" y2="70" stroke="#a9cdd8" stroke-width="1.4"/>
+            <line x1="240" y1="30" x2="240" y2="112" stroke="#8aa79a" stroke-width="1.3"/>
+            <rect x="235" y="44" width="10" height="26" rx="4" fill="#e0653f"/>
+            <rect x="235" y="104" width="10" height="10" rx="2" fill="#596b62"/>
+            <text x="240" y="142" text-anchor="middle">② 半水调四目</text>
+            <text x="240" y="158" text-anchor="middle" fill="#8a9a91">剪铅到漂尾露 4 目</text>
+            <!-- 3 -->
+            <rect x="330" y="20" width="140" height="130" rx="8" fill="#f4f9fb" stroke="#e0e7e2"/>
+            <line x1="330" y1="70" x2="470" y2="70" stroke="#a9cdd8" stroke-width="1.4"/>
+            <line x1="400" y1="30" x2="400" y2="118" stroke="#8aa79a" stroke-width="1.3"/>
+            <rect x="395" y="52" width="10" height="20" rx="4" fill="#e0653f"/>
+            <path d="M400 112 q-6 7 0 12 q6 -5 0 -12" fill="none" stroke="#3f5149" stroke-width="1.4"/>
+            <text x="400" y="142" text-anchor="middle">③ 挂饵钓二目</text>
+            <text x="400" y="158" text-anchor="middle" fill="#8a9a91">下钩触底 · 露 2 目</text>
+            <!-- 4 -->
+            <rect x="490" y="20" width="140" height="130" rx="8" fill="#eaf4ee" stroke="#cfe2d7"/>
+            <text x="560" y="50" text-anchor="middle" fill="#0f6b47" font-size="11">有口不中</text>
+            <text x="560" y="72" text-anchor="middle" fill="#0f6b47" font-size="11">→ 上推半目</text>
+            <text x="560" y="102" text-anchor="middle" fill="#0b6b8a" font-size="11">空竿信号乱</text>
+            <text x="560" y="124" text-anchor="middle" fill="#0b6b8a" font-size="11">→ 下推钓灵</text>
+            <text x="560" y="158" text-anchor="middle" fill="#8a9a91">④ 微调</text>
+          </g>
+        </svg>
+        <figcaption>重铅找底 → 半水调四目 → 挂饵钓二目 → 按鱼口微调</figcaption>
+      </figure>
+    </div>
+    <p class="warn"><b>新手常犯</b>：跳过找底直接调漂，饵料根本没到底；或者调完不挂饵试，误以为“没鱼口”。</p>
+    <p class="note">调四钓二不是标准答案，只是一个可复现的起点。水深、饵重、走水都会影响目数，先固定一套，再学着改。</p>
+  </article>
+
+  <!-- 05 -->
+  <article class="card" id="step-5">
+    <header>
+      <div class="idx">05</div>
+      <div>
+        <h2>开钓与收竿：把鱼钓上来，也把地方留干净</h2>
+        <p class="goal">目标：安全上岸、合规作钓、鱼和钓点都能被善待。</p>
+      </div>
+    </header>
+    <div class="body">
+      <div>
+        <h3 class="sub">作钓动作</h3>
+        <ul class="plain">
+          <li><label class="item"><input type="checkbox" data-key="s5-1"><span><b>抛竿不过满</b>：八分满即可，抛完压风线，让漂相更真实</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s5-2"><span><b>见口等一秒</b>：黑漂或顶漂后默数一秒再提竿，手腕发力而不是抡手臂</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s5-3"><span><b>中鱼先领窝</b>：把鱼领出窝点再用抄网，避免惊窝</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s5-4"><span><b>放流要快</b>：湿手、快摘钩、离水不超过 30 秒，幼鱼与繁殖期成鱼优先放流</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s5-5"><span><b>收竿三件事</b>：垃圾带走、断线碎钩收好、清点装备再离开</span></label></li>
+          <li><label class="item"><input type="checkbox" data-key="s5-6"><span><b>合规底线</b>：禁渔期与禁钓区不下竿；电鱼、毒鱼、多竿多钩等按当地规定执行</span></label></li>
+        </ul>
+      </div>
+      <figure>
+        <svg viewBox="0 0 300 240" role="img" aria-label="安全与合规提示：救生衣、雷雨撤离、垃圾带走、幼鱼放流">
+          <rect width="300" height="240" fill="#fbfcfb"/>
+          <g>
+            <circle cx="58" cy="56" r="26" fill="#fdf3e7" stroke="#efdcc5"/>
+            <path d="M58 40 v18 M58 58 v14" stroke="#a85a12" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="58" cy="80" r="2.4" fill="#a85a12"/>
+            <text x="96" y="52" font-size="11" fill="#6d4418">雷雨立即撤离</text>
+            <text x="96" y="70" font-size="10" fill="#8a9a91">碳素竿导电，别侥幸</text>
+          </g>
+          <g>
+            <circle cx="58" cy="122" r="26" fill="#e6f2f7" stroke="#cfe1e9"/>
+            <path d="M46 112 h24 v20 a12 12 0 0 1 -24 0 Z" fill="#0b6b8a" opacity=".75"/>
+            <text x="96" y="118" font-size="11" fill="#0b6377">水边穿救生衣</text>
+            <text x="96" y="136" font-size="10" fill="#8a9a91">不去陡坡与湿滑石岸</text>
+          </g>
+          <g>
+            <circle cx="58" cy="188" r="26" fill="#eaf4ee" stroke="#cfe2d7"/>
+            <path d="M46 182 h24 M46 188 h24 M46 194 h18" stroke="#0f6b47" stroke-width="1.8"/>
+            <text x="96" y="184" font-size="11" fill="#0f6b47">垃圾与断线带走</text>
+            <text x="96" y="202" font-size="10" fill="#8a9a91">鱼线会缠住水鸟</text>
+          </g>
+        </svg>
+        <figcaption>三个底线：天气、涉水安全、环境与合规</figcaption>
+      </figure>
+    </div>
+    <p class="warn"><b>新手常犯</b>：雷声近了还在收最后一竿；徒手抓鱼被扎；把饵料袋和断线留在岸边。</p>
+  </article>
+
+  <div class="disclaimer">
+    <p><b>说明</b>：这份清单是城市周边水库钓鲫的通用示例，线号、漂号、调目都要按当地水情、鱼情与法规调整。本项目是决策辅助工具，不构成渔获保证；请以当地禁渔期、禁钓区与安全规定为准。</p>
+    <p style="margin-bottom:0">更完整的实时建议（气温、气压、水温、月相与钓点选择）见 <a href="https://angling-ai-266sqs778.streamlit.app" target="_blank" rel="noopener">千鱼千寻 · 在线参谋</a>。</p>
+  </div>
+</main>
+
+<footer class="bottom">
+  <div class="wrap">千鱼千寻 · 钓鱼导航示例 · <a href="https://github.com/266sqs778/angling-ai">GitHub 仓库</a></div>
+</footer>
+
+<script>
+  (function () {
+    var KEY = "angling-guide.v1";
+    var boxes = Array.prototype.slice.call(document.querySelectorAll("input[type=checkbox][data-key]"));
+    var fill = document.getElementById("progress-fill");
+    var text = document.getElementById("progress-text");
+    var bar = document.getElementById("progress");
+
+    function read() {
+      try {
+        return JSON.parse(localStorage.getItem(KEY) || "{}") || {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    var saved = read();
+
+    function paint() {
+      var done = boxes.filter(function (box) { return box.checked; }).length;
+      var percent = boxes.length ? Math.round((done / boxes.length) * 100) : 0;
+      text.textContent = done + " / " + boxes.length;
+      fill.style.width = percent + "%";
+      bar.setAttribute("aria-valuenow", String(percent));
+    }
+
+    boxes.forEach(function (box) {
+      box.checked = Boolean(saved[box.dataset.key]);
+      box.addEventListener("change", function () {
+        saved[box.dataset.key] = box.checked;
+        try {
+          localStorage.setItem(KEY, JSON.stringify(saved));
+        } catch (error) {
+          /* 隐私模式下忽略写入失败，勾选仍可用 */
+        }
+        paint();
+      });
+    });
+
+    document.getElementById("reset").addEventListener("click", function () {
+      saved = {};
+      boxes.forEach(function (box) { box.checked = false; });
+      try {
+        localStorage.removeItem(KEY);
+      } catch (error) { /* ignore */ }
+      paint();
+    });
+
+    paint();
+  })();
+</script>
+</body>
+</html>
